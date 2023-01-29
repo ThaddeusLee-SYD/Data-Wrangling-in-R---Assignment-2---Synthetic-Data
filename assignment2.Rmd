@@ -1,0 +1,1598 @@
+---
+title: 'Data Wrangling Assessment Task 2: Creating and pre-processing synthetic data'
+author: "Insert student name and number here"
+subtitle: null
+output:
+  pdf_document: default
+  word_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+---
+If you have any questions regarding the assignment instructions and the R Markdown template, please post it on the discussion board **Questions on completing Assessment 2.**  
+
+
+## Setup 
+
+Insert and load the packages you need to produce the report here:
+```{r, echo = TRUE, warnings = FALSE, error = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(lubridate)
+library(magrittr) 
+library(dplyr) # For Wrangling Data
+library(tidyr) # Fore Reading and Writing Data.
+library(outliers)
+library(tidyverse)
+library(deducorrect) 
+library(deductive)
+library(validate)
+library(Hmisc)
+library(MVN)
+library(readr)
+library(openxlsx)
+library(tinytex)
+#library(xlsx)
+
+```
+
+
+# Data Wrangling Assessment Task 2: Creating and pre-processing synthetic data
+
+
+## Creating Synthetic Customer Data
+
+As a Data Analyst for Uber, we have been tasked with generating 2 synthetic Data Sets and merging them together to create a larger data set, and inspect and clean them of any NA and Outlier values and deal with them accordingly.  
+
+We start off with our customer data set which we will refer to cust_df, which will contain some customer related data with 100 observations and the following variables:  
+
+* **CustomerID**
+* **RiderRating**
+* **UberPass**
+* **TripID**
+* **UberServices**
+* **TimeRequested**
+* **SuburbDropOff**
+* **TravelTime**
+* **TripDistance**
+* **SurgeMultiplier**
+* **BaseFare**
+* **MinuteRate**
+* **RatePerKM**  
+
+
+
+### Customer ID
+We start off with **CustomerID**, which is a vector created using the **sample()** function, creating a vector of 100 rows, created using random numbers between a range of 10000 and 11000. This will be our row for **CustomerID** and will be the first column of our **cust_df** data frame as per the code below. As **CustomerID** values are unique in nature, we set **replace = FALSE** to prevent any duplicates.
+
+
+* ....
+
+```{r, echo = TRUE}
+## Creating Synthetic Data Set
+
+#### Creating Customer ID Variable
+#### Creating CUSTOMER DATA FRAME
+#For our dataset, Customer ID between 10000 and 11000 
+
+# Set the possible outcomes 
+x <- 10000:11000
+
+# Set the sample size 
+n <- 100
+
+# Set the value of the seed 
+SEED <- 234 
+
+set.seed(SEED)
+
+CustomerID <- sample(x, n, replace = FALSE )
+CustomerID
+
+cust_df <- as.data.frame(CustomerID)
+```
+
+### Customer Rating
+Uber works on a system where riders and drivers can provide ratings to each other. For our customer ratings column, we use the **runif()** function to generate a **RiderRating** column of 100 observations between values of 4.2 and 5 as per the code below. **runif()** is used here as we're not making assumptions about the distribution of the rating.
+
+```{r, echo = TRUE}
+## Customer Rating
+set.seed(123)
+
+cust_df$RiderRating <- runif(100, 4.2, 5)
+
+```
+
+### Uber One
+
+Uber One is a membership program created by Uber which allows members access to special discounts across its service offerings including Uber Eats (Uber, 2022). This column will identify whether the customer in our dataset is a member.    
+
+This variable will be a boolean with responses including **TRUE** and **FALSE**. We assume that 25% of the customers in our dataset are members. In creating the variable we set probability as 25% TRUE for members, and 75% False for non members as per the code below. As with **Customer ID** we will be attaching each column to our **cust_df** as they are created.
+
+
+
+```{r, echo = TRUE}
+#Uber One
+#Uber provide a membership service
+# Services 
+a <- c(TRUE, FALSE)
+
+n <- 100
+
+SEED <- 215
+
+set.seed(SEED)
+
+# Generate the synthetic data 
+cust_df$UberPass <- sample(a, n, replace = TRUE, prob = c(0.25, 0.75))
+#cust_df$UberPass
+
+```
+
+### Trip ID
+**TripID**, is a variable representing unique identifier for requested trips. similar to the CustomerID variable, we use the **sample()** function, to create a variable using random numbers generated using a range of numbers between 10000 and 60000 with 100 observations. **TripIDs** are unique, and again we set **replace = FALSE** to prevent any duplicates.  
+
+
+
+```{r, echo = TRUE}
+################    Trip ID
+# Set the possible outcomes 
+y <- 10000:60000
+
+# Set the sample size 
+n <- 100
+
+# Set the value of the seed 
+SEED <- 105
+
+set.seed(SEED)
+
+cust_df$TripID <- sample(y, n, replace = FALSE )
+#cust_df$TripID
+```
+### Service Levels
+
+Uber provides different service levels that provide customers options depending on their requests and budget (Uber, 2022).  
+For the purposes of our data set, we will focus on the following from least to most expensive:  
+
+**UberX** - which is a basic level of service.  
+**UberComfort** -  which provides a comfortable mid-sized car with top-rated drivers.  
+**UberXL** -  which provides a larger vehichle for comfort and can accomodate more passengers or groups.  
+**UberPremier** -  which is a luxury option where a luxury vehicle is used for passengers riding to special events.  
+
+we use the **sample()** function to randomly generate our **UberService** column, and we also use **prob** to determine the chance of the service being used, with the cheaper options, being having greater probability.
+
+As per the below code, we set probability(stackexchange, 2011):  
+
+* 40% - UberX
+* 25% - UberComfort
+* 20% - UberXL
+* 15% - UberPremier
+
+
+
+
+
+```{r, echo = TRUE}
+
+# Services 
+
+#https://stats.stackexchange.com/questions/14158/how-to-generate-random-categorical-data
+Services <- c("UberX", "UberComfort", "UberXL", "UberPremier")
+
+n <- 100
+
+SEED <- 205
+
+set.seed(SEED)
+
+# Generate the synthetic data 
+cust_df$UberServices <- sample(Services, n, replace = TRUE, prob = c(0.40, 0.25, 0.2, 0.15 )) 
+# Display the synthetic data
+#We set probability of services "Pool", "UberX", "UberComfort", "UberXL", "UberPremier" to 0.25, .40, 0.2, 0.1 and 0.05 respectively.
+#cust_df$UberServices
+
+
+```
+
+
+### Time Requested
+This variable shows when the UBER was ordered. For our dataset, our trip data is focused on a week between 28/03/2022 and 03/04/2022.
+We set the range for our date and time using the following code:  
+
+TimeRange <- seq(as.POSIXct('2022-03-28 00:00:00 AEDT'), as.POSIXct('2022-04-03 23:59:59 AEDT'), by = "sec")  
+
+The **as.POSIXct** function allows us to generate our beginning and end dates, **by = sec** allows time to be divided in second increments.
+
+Once we have our range of dates, we then use the sample() function to pull 100 randomly chosen dates and times to create the column for our **cust_df** dataframe.
+
+
+
+```{r, echo = TRUE}
+# Generating a random range of time and date within a week (Stackoverflow.com, 2017)
+# <https://stackoverflow.com/questions/45633452/generate-random-times-in-sample-of-posixct>
+#POSIXct gives date and time
+
+TimeRange <- seq(as.POSIXct('2022-03-28 00:00:00 AEDT'), as.POSIXct('2022-04-03 23:59:59 AEDT'), by = "sec")
+
+
+set.seed(2022)
+n <- 100
+
+cust_df$TimeRequested <- sample(TimeRange, n, replace = TRUE)
+
+```
+
+### Destination  
+
+For Destination, our sample data will assume that our customers will be ordering an Uber from the centre of Parramatta CBD and travelling to a number of suburbs of varying distances. We then create a vector with our chosen suburbs of the following suburbs:  
+
+* Darlinghurst
+* Sydney
+* Kings Cross
+* Glebe
+* Blacktown
+* Ryde
+* Winston Hills
+* Strathfield
+* Burwood
+* Canley Heights
+* Baulkham Hills
+* Pennant Hills
+* Eastwood
+* Enfield
+* Ashfield
+* Leichardt
+* Fairfield
+* Sefton
+* Lidcombe
+* Greystanes
+* Carlingford
+* Chester Hill
+* Auburn
+* North Rocks
+* Merrylands 
+* Guildford  
+
+
+We again use the sample function to create our SuburbDropOff variable oof 100 observations which will serve to tell us where the customers in our data set are going.   
+
+```{r, echo = TRUE}
+
+#Destination
+
+Destination <- c("Darlinghurst", "Sydney", "Kings Cross", "Glebe", "Blacktown", "Ryde", "Winston Hills", "Strathfield", "Burwood", "Canley Heights", "Baulkham Hills", "Pennant Hills", "Eastwood", "Enfield", "Ashfield", "Leichardt", "Fairfield", "Sefton", "Lidcombe", "Greystanes", "Carlingford", "Chester Hill", "Auburn", "North Rocks", "Merrylands", "Guildford", "North Parramatta")
+
+n <- 100
+SEED <- 768
+set.seed(SEED)
+
+cust_df$SuburbDropOff <- sample(Destination, n, replace = TRUE)
+```
+### Travel Time  
+Travel Time is a variable that will give us the duration of the customer's trip. We used Google Maps(Google, 2022), to get estimates of travel times and distance from parramatta to each suburb. Suburbs that are in relatively similar travel window by time are then grouped together into 4 districts.  
+
+From the code below:  
+cust_df$TravelTime[cust_df$SuburbDropOff == "Merrylands"| cust_df$SuburbDropOff == "Guildford"| cust_df$SuburbDropOff == "Parramatta"| cust_df$SuburbDropOff == "North Parramatta"] <- runif(d1, 5, 10 )  
+
+We use the runif() function to generate random travel times. As per the above code, we see that a lower limit and upper limit of 5 minutes and 10 minutes is chosen respectively. As the values are generated for each district, they are then added to the column we call TravelTime.  
+
+
+
+```{r, echo = TRUE}
+### Travel Time
+
+set.seed(5000)
+
+# District 1 - 
+d1 <- sum(cust_df$SuburbDropOff == "Merrylands"| cust_df$SuburbDropOff == "Guildford"| cust_df$SuburbDropOff == "North Parramatta")
+
+cust_df$TravelTime[cust_df$SuburbDropOff == "Merrylands"| cust_df$SuburbDropOff == "Guildford"| cust_df$SuburbDropOff == "Parramatta"| cust_df$SuburbDropOff == "North Parramatta"] <- runif(d1, 5, 10 )
+
+
+#District 2 - 
+d2 <- sum(cust_df$SuburbDropOff == "Fairfield"| cust_df$SuburbDropOff == "Sefton"|cust_df$SuburbDropOff == "Lidcombe"|cust_df$SuburbDropOff == "Greystanes"|cust_df$SuburbDropOff == "Carlingford"|cust_df$SuburbDropOff == "Chester Hill"|cust_df$SuburbDropOff == "Auburn"| cust_df$SuburbDropOff == "North Rocks")
+
+cust_df$TravelTime[cust_df$SuburbDropOff == "Fairfield"| cust_df$SuburbDropOff == "Sefton"|cust_df$SuburbDropOff == "Lidcombe"|cust_df$SuburbDropOff == "Greystanes"|cust_df$SuburbDropOff == "Carlingford"|cust_df$SuburbDropOff == "Chester Hill"|cust_df$SuburbDropOff == "Auburn"| cust_df$SuburbDropOff == "North Rocks"] <- runif(d2, 11, 16 )
+
+
+
+#District 3
+d3 <- sum(cust_df$SuburbDropOff == "Blacktown"| cust_df$SuburbDropOff == "Ryde"|cust_df$SuburbDropOff == "Winston Hills"|cust_df$SuburbDropOff == "Strathfield"|cust_df$SuburbDropOff == "Burwood"|cust_df$SuburbDropOff == "Canley Heights"|cust_df$SuburbDropOff == "Baulkham Hills"| cust_df$SuburbDropOff == "Pennant Hills"| cust_df$SuburbDropOff == "Eastwood"| cust_df$SuburbDropOff == "Enfield"| cust_df$SuburbDropOff == "Ashfield"| cust_df$SuburbDropOff == "Leichardt")
+
+
+cust_df$TravelTime[cust_df$SuburbDropOff == "Blacktown"| cust_df$SuburbDropOff == "Ryde"|cust_df$SuburbDropOff == "Winston Hills"|cust_df$SuburbDropOff == "Strathfield"|cust_df$SuburbDropOff == "Burwood"|cust_df$SuburbDropOff == "Canley Heights"|cust_df$SuburbDropOff == "Baulkham Hills"| cust_df$SuburbDropOff == "Pennant Hills"| cust_df$SuburbDropOff == "Eastwood"| cust_df$SuburbDropOff == "Enfield"| cust_df$SuburbDropOff == "Ashfield"| cust_df$SuburbDropOff == "Leichardt"] <- runif(d3, 17, 25 )
+
+
+
+#District 4
+
+d4 <- sum(cust_df$SuburbDropOff == "Darlinghurst"| cust_df$SuburbDropOff == "Sydney"| cust_df$SuburbDropOff == "Kings Cross"| cust_df$SuburbDropOff == "Glebe")
+
+
+cust_df$TravelTime[cust_df$SuburbDropOff == "Darlinghurst"| cust_df$SuburbDropOff == "Sydney"|cust_df$SuburbDropOff == "Kings Cross"|cust_df$SuburbDropOff == "Glebe"] <- runif(d4, 30, 35)
+
+
+
+```
+### Travel Distance
+Similar to the creation of our TravelTime variable, google maps (google, 2022) is used to get estimates for travel distances for each of our destinations. Using the same groups created for our **TravelTime** column, we use the **runif()** function to generate random travel distances for each group depending on how far that group is from our assumed pick up spot of Parramatta CBD.   
+
+The randomness can account for differing routes and traffic levels.
+
+
+```{r, echo = TRUE}
+# Travel Distance
+
+set.seed(6000)
+
+# District 1 - 
+k1 <- sum(cust_df$SuburbDropOff == "Merrylands"| cust_df$SuburbDropOff == "Guildford"| cust_df$SuburbDropOff == "Parramatta"| cust_df$SuburbDropOff == "North Parramatta")
+
+cust_df$TripDistance[cust_df$SuburbDropOff == "Merrylands"| cust_df$SuburbDropOff == "Guildford"| cust_df$SuburbDropOff == "Parramatta"| cust_df$SuburbDropOff == "North Parramatta"] <- runif(k1, 2, 4 )
+
+
+#District 2 - 
+k2 <- sum(cust_df$SuburbDropOff == "Fairfield"| cust_df$SuburbDropOff == "Sefton"|cust_df$SuburbDropOff == "Lidcombe"|cust_df$SuburbDropOff == "Greystanes"|cust_df$SuburbDropOff == "Carlingford"|cust_df$SuburbDropOff == "Chester Hill"|cust_df$SuburbDropOff == "Auburn"| cust_df$SuburbDropOff == "North Rocks")
+
+cust_df$TripDistance[cust_df$SuburbDropOff == "Fairfield"| cust_df$SuburbDropOff == "Sefton"|cust_df$SuburbDropOff == "Lidcombe"|cust_df$SuburbDropOff == "Greystanes"|cust_df$SuburbDropOff == "Carlingford"|cust_df$SuburbDropOff == "Chester Hill"|cust_df$SuburbDropOff == "Auburn"| cust_df$SuburbDropOff == "North Rocks"] <- runif(k2, 6, 10 )
+
+
+
+#District 3
+k3 <- sum(cust_df$SuburbDropOff == "Blacktown"| cust_df$SuburbDropOff == "Ryde"|cust_df$SuburbDropOff == "Winston Hills"|cust_df$SuburbDropOff == "Strathfield"|cust_df$SuburbDropOff == "Burwood"|cust_df$SuburbDropOff == "Canley Heights"|cust_df$SuburbDropOff == "Baulkham Hills"| cust_df$SuburbDropOff == "Pennant Hills"| cust_df$SuburbDropOff == "Eastwood"| cust_df$SuburbDropOff == "Enfield"| cust_df$SuburbDropOff == "Ashfield"| cust_df$SuburbDropOff == "Leichardt")
+
+
+cust_df$TripDistance[cust_df$SuburbDropOff == "Blacktown"| cust_df$SuburbDropOff == "Ryde"|cust_df$SuburbDropOff == "Winston Hills"|cust_df$SuburbDropOff == "Strathfield"|cust_df$SuburbDropOff == "Burwood"|cust_df$SuburbDropOff == "Canley Heights"|cust_df$SuburbDropOff == "Baulkham Hills"| cust_df$SuburbDropOff == "Pennant Hills"| cust_df$SuburbDropOff == "Eastwood"| cust_df$SuburbDropOff == "Enfield"| cust_df$SuburbDropOff == "Ashfield"| cust_df$SuburbDropOff == "Leichardt"] <- runif(k3, 12, 20 )
+
+
+
+#District 4
+
+k4 <- sum(cust_df$SuburbDropOff == "Darlinghurst"| cust_df$SuburbDropOff == "Sydney"| cust_df$SuburbDropOff == "Kings Cross"| cust_df$SuburbDropOff == "Glebe")
+
+
+cust_df$TripDistance[cust_df$SuburbDropOff == "Darlinghurst"| cust_df$SuburbDropOff == "Sydney"|cust_df$SuburbDropOff == "Kings Cross"|cust_df$SuburbDropOff == "Glebe"] <- runif(k4, 26, 34)
+
+
+
+```
+
+### Surge Pricing  
+
+Uber utilises surge pricing in times where there is increased demand for their services during peak periods (Uber, 2022).
+A look at their website indicates that the busiest times are generally on Friday nights, Saturday mornings, Saturday nights and Sunday Mornings.  
+
+In order to simulate the effect of surge pricing, we use the **mutate()** function below to create a number of arguments to with respect to the random values generated in our **TimeRequested** Column.  
+
+Between 5pm and 7pm we utilize a multiplier of 1.5 on Friday and Saturday, a multiplier of 2 between 7pm and midnight on Saturday and Friday. A multiplier of 1.5 between midnight and 5am on Saturday and Sunday mornings.
+
+
+
+
+
+```{r, echo = TRUE}
+#Surge Variable:
+#Uber utilises increases the price of using their platform during periods where the demand for rides is high.
+
+cust_df %<>%
+  mutate(SurgeMultiplier= case_when(is.na(TimeRequested) ~ "1.0", 
+                                  TimeRequested <= "2022-04-01 17:00:00" ~ "1.0",
+                                  TimeRequested <= "2022-04-01 19:00:00" ~ "1.5", 
+                                  TimeRequested <= "2022-04-01 23:59:59" ~ "2.0",
+                                  TimeRequested <= "2022-04-02 05:00:00" ~ "1.5",
+                                  TimeRequested <= "2022-04-02 17:00:00" ~ "1.0",
+                                  TimeRequested <= "2022-04-02 19:00:00" ~ "1.5",
+                                  TimeRequested <= "2022-04-02 23:59:59" ~ "2.0",
+                                  TimeRequested <= "2022-04-03 05:00:00" ~ "1.5",
+                                  TRUE ~ "1.0"))
+```
+
+### Fares
+
+Uber utilisese a tiered pricing structure for their services (finder.com, 2021). Uber's fares consist of a **base fare**, a **rate charged per km** and a **rate charged for trip time**. All vary depending on the service level used.  
+
+As the base fare and rates vary depending on service level, we use the information generated from our UberService column to create the following columns for our customer data:  
+
+* BaseFare
+* MinuteRate
+* RateperKM
+
+The mutate function is used to create the appropriate base fare and rates in the above columns. The below code shows how we create the columns and how the base fare and rates vary depending on service level.
+
+
+
+```{r, echo = TRUE}
+######## FARE - Correlated ######
+#https://www.finder.com.au/uber-sydney-fares-services
+#Base Rate calculated based on service requested
+
+cust_df %<>% 
+  mutate(BaseFare = case_when(is.na(UberServices) ~ "2.50", 
+                                  UberServices == "UberX" ~ "2.50", 
+                                  UberServices == "UberComfort" ~ "3.38",
+                                  UberServices == "UberXL" ~ "4",
+                                  UberServices == "UberPremier" ~ "5.5",
+                                  TRUE ~ "2.75"))
+
+#Rate per Minute - varies by service requested
+cust_df %<>% 
+  mutate(MinuteRate = case_when(is.na(UberServices) ~ "0.40", 
+                                  UberServices == "UberX" ~ "0.40", 
+                                  UberServices == "UberComfort" ~ "0.54",
+                                  UberServices == "UberXL" ~ "0.61",
+                                  UberServices == "UberPremier" ~ "0.88",
+                                  TRUE ~ "0.40"))
+
+#Rate per KM - varies by service requested
+cust_df %<>% 
+  mutate(RatePerKM = case_when(is.na(UberServices) ~ "1.45", 
+                                  UberServices == "UberX" ~ "1.45", 
+                                  UberServices == "UberComfort" ~ "1.96",
+                                  UberServices == "UberXL" ~ "2.31",
+                                  UberServices == "UberPremier" ~ "3.19",
+                                  TRUE ~ "1.45"))
+
+#cust_df$TotalFare <- cust_df$BaseFare + (cust_df$TravelTime * cust_df$MinuteRate)
+
+
+```
+## Creating Synthetic Driver Data
+
+We will now shift our focus to creating synthetic driver data with information relevant to drivers.  
+Our driver dataframe, Drive_df, will consist of:  
+
+* **DriverID**
+* **DriverRating**
+* **YearsWorked**
+* **CarOwnership**
+* **CarType**
+* **MaxPassengers**
+* **TripID**  
+
+### Driver ID
+We will first create a unique identifier for drivers, very much like **customerIDs**.
+Using the **sample()** function we create 100 observations of random numbers ranged between 40000 and 50000. As DriverIDs are unique, we set **replace = FALSE**
+
+
+```{r, echo = TRUE}
+#################### DRIVER DATA FRAME
+
+#Create DriverID variable
+#For our dataset, DriverID between 40000 and 50000 
+
+# Set the possible outcomes 
+c <- 40000:50000
+
+# Set the sample size 
+n <- 100
+
+# Set the value of the seed 
+SEED <- 209 
+
+set.seed(SEED)
+
+DriverID <- sample(c, n, replace = FALSE )
+DriverID
+
+Drive_df <- as.data.frame(DriverID)
+```
+
+### Driver Rating 
+Similar to our **RiderRating**, we use the **runif()** function to create our **DriverRating** column.  
+Uber Drivers are expected to maintain an average rating of 4.6 from their most recent 100 trips to continue using the app (The Guardian, 2019.  
+
+In creating our **DriverRating** column, we use a range between 4.5 to 5 in creating data that is realistic.
+
+
+
+
+```{r, echo = TRUE}
+## Driver Rating
+set.seed(7778)
+
+Drive_df$DriverRating <- runif(100, 4.5, 5)
+```
+### Years Worked  
+The number of years the driver has been signed on and working as an uber driver. We set a range between 0 to 10 years and use the **sample()** function to create our **YearsWorked** Column. As the values do not need to be unique, we set **replace = False**.
+
+
+```{r, echo = TRUE}
+#Drive_DF - Number of years worked
+
+# Set the possible outcomes 
+d <- 0:10
+
+# Set the sample size 
+n <- 100
+
+# Set the value of the seed 
+SEED <- 150
+
+set.seed(SEED)
+
+Drive_df$YearsWorked <- sample(d, n, replace = TRUE) 
+
+
+```
+### Car Ownership  
+
+This column indicates whether the driver is renting or owns their car used for Uber. **sample()** function is used to generate our **CarOwnership** column with values as **Rent** and **Own**.
+
+```{r, echo = TRUE}
+#Car Ownership
+SEED <-333
+set.seed(SEED)
+ownership <- c("Rent", "Own")
+Drive_df$CarOwnership <- sample(ownership, n, replace = TRUE)
+Drive_df$CarOwnership
+```
+### Car Type  
+**CarType** shows us the type of car the driver is using. Among Uber's vehicle requirements (Uber, 2022), is that the vehicle be a 4 door car or passenger van.  
+
+As we are focusing on a limited range of services, our data will consist of vehicles that Uber would find appropriate. We will focus on the followoing types of vehichles:  
+
+* **4-Door Sedan/Hatch**
+* **SUV**
+* **Luxury Sedan**  
+
+Our column for car type is based on the service that the driver can provide. Based off **UberServices** data provided in our **cust_df** data set.  
+
+**4-Door Sedan/Hatch** are suitable for **UberX** and **UberComfort** services, **SUVs** are suitable for **UberXL** as they can sit 5 passengers, we have **Luxury Sedan** suitable for **Uber Premier**.  
+
+As with the Base Fare and Rates we generated, we use the **mutate()** function to create our **CarType** data from the **UberServices** variable from our **cust_df** column.
+
+
+
+```{r, echo = TRUE}
+#Car Type
+# Creating Variable for Services Offered
+Services <- c("UberX", "UberComfort", "UberXL", "UberPremier")
+
+n <- 100
+
+SEED <- 205
+
+set.seed(SEED)
+
+# Generate the synthetic data 
+OfferedService <- sample(Services, n, replace = TRUE, prob = c(0.40, 0.25, 0.2, 0.15 ))  
+# Display the synthetic data
+
+as.factor(OfferedService)
+#We set probability of services "Pool", "UberX", "UberComfort", "UberXL", "UberPremier" to 0.25, .40, 0.2, 0.1 and 0.05 respectively.
+Drive_df$OfferedService
+
+#Creating variable for type of car used by driver.
+Drive_df %<>% 
+  mutate(CarType = case_when(is.na(OfferedService) ~ "Hatch", 
+                                  OfferedService == "UberX" ~ "4-Door Sedan/Hatch", 
+                                  OfferedService == "UberComfort" ~ "4-Door Sedan/Hatch",
+                                  OfferedService == "UberXL" ~ "SUV",
+                                  OfferedService == "UberPremier" ~ "Luxury Sedan",
+                                  TRUE ~ "Hatch"))
+
+```
+
+### Max Passengers  
+This column will provide information on the maximum number of passengers a vehicle can sit.  
+* **4-Door Sedan/Hatch** can seat 3 passengers,
+* **SUVs** can seat 5 passengers
+* **Luxury Sedan** can set up to 3 passengers.  
+
+
+We use the **mutate** function to create our **MaxPassenger** column from our **CarType**.
+
+
+```{r, echo = TRUE}
+# Creating variable for Max Passengers
+Drive_df %<>% 
+  mutate(MaxPassengers = case_when(is.na(CarType) ~ "3", 
+                                  CarType == "4-Door Sedan/Hatch" ~ "3", 
+                                  CarType == "4-Door Sedan/Hatch" ~ "3",
+                                  CarType == "SUV" ~ "5",
+                                  CarType == "Luxury Sedan" ~ "3",
+                                  TRUE ~ "3"))
+
+
+
+```
+### Trip ID  
+
+**TripID** as stated before, is a unique identifier created when our customer requests a ride. When the app matches the rider and driver, information from our **cust_df** and **Driver_df** is shared. As this column will be the common variable between both data sets, we create a copy of **TripID** from our **cust_df** using **<-**.  
+
+
+
+
+```{r, echo = TRUE}
+#Trip ID
+# Set the possible outcomes 
+
+
+Drive_df$TripID <- cust_df$TripID
+Drive_df$TripID
+```
+## Inputting Missing Values and Outliers into Data Sets  
+
+Missing values and Outliers can occur in datasets for a variety of reasons. They can occur as a result of errors from data entry, measurements, experimental errors, intentional errors, data processing errors and sampling errors.  
+
+In creating realistic data sets we will place three NA values in each data set (**cust_df**, and **Driver_df**) and place Outliers in the following numeric variables:  
+
+* RiderRating
+* TravelTime
+* TripDistance
+* BaseFare
+* MinuteRate
+* RatePerKM
+* DriverRating  
+
+This is done manually by subsetting each of the **cust_df** and **Driver_df** dataframe by **row and column** numbers I've selected at random.  
+
+For our **cust_df** data frame, missing values, 2 are placed in **RiderRating** column, and one is placed in **UberServices**.  
+
+For **Driver_df**, two missing values are placed in **DriverRating** column, and one in **CarType** column.
+
+
+
+```{r, echo = TRUE}
+##############################################################################################################################
+#                                          NAs and Outliers                                                   #
+##############################################################################################################################
+summary(cust_df)
+summary(Drive_df)
+#Cust_fd  -  Placing NA values into cust_df
+cust_df[2, 2] = NA #Places NA value in 2nd row  in RiderRating Column
+cust_df[93, 2] = NA #Places NA value in 2nd row  in RiderRating Column
+cust_df[53, 5] = NA #Places NA value in 2nd row  in UberServices
+
+
+#Drive_df  -  Placing NA values into Drive_df
+Drive_df[10, 2] = NA #Places NA value in 2nd row  in DriverRating Column
+Drive_df[49, 5] = NA #Places NA value in 2nd row  in CarType Column
+Drive_df[56, 6] = NA #Places NA value in 2nd row  in DriverRating Column
+
+
+
+#Cust_df  -  Outliers
+#Rider Rating
+cust_df[23, 2] = 2 # Outlier number entered into row 23 of RiderRating Column
+
+#Travel Time
+cust_df[52, 8] = 50 # Outlier number entered into row 52 of TravelTime Column
+
+#Trip Distance
+cust_df[70, 9] = 45 # Outlier number entered into row 70 of TripDistance Column
+
+#Base Fare
+cust_df[83, 11 ] = 0.20 # Outlier number entered into row 83 of BaseFare Column
+
+#Minute Rate
+cust_df[83 , 12] = 0.35 # Outlier number entered into row 83 of MinuteRate Column
+
+#RatePerKM
+cust_df[83, 13] = 1  # Outlier number entered into row 83 of RatePerKM Column
+
+
+
+#Drive_df  - Outliers
+#DriverRating
+Drive_df[99, 2] = 3 # Outlier number entered into row 99 of DriverRating Column
+
+#Years Worked
+Drive_df[50, 3] = 18 # Outlier number entered into row 50 of YearsWorked Column
+
+#MaxPassengers
+Drive_df[43, 6] = 7 # Outlier number entered into row 50 of MaxPassengers Column
+
+
+
+
+```
+## Merging Data Set
+
+Now that we have our separate dataframes it is time to merge them. We achieve this using the **merge.data.frame** function.  
+
+The result of the merge, creates a data frame with 100 observations and 19 variables when we use the **str()** function.
+
+We then use **as.numeric()** function to convert the following columns to numeric data:  
+
+* TripID
+* CustomerID
+* RiderRating
+* TravelTime
+* TripDistance
+* SurgeMultiplier
+* BaseFare
+* MinuteRate
+* RatePerKM
+* DriverID
+* YearsWorked
+* MaxPassengers  
+
+**as.factor()** function is used on **UberServices**, **UberSuburbDropOff**, **CarType** and **CarOwnership**
+
+ 
+
+
+
+```{r, echo = TRUE}
+##################################################################################################
+######################### MERGING DATASETS #######################################################
+
+UBER <- merge.data.frame(cust_df, Drive_df)
+
+
+str(UBER)
+colnames(UBER)
+#### Converting Data Type
+
+UBER$TripID <- as.numeric(UBER$TripID)
+UBER$CustomerID <- as.numeric(UBER$CustomerID)
+UBER$RiderRating <- as.numeric(UBER$RiderRating)
+UBER$TravelTime <- as.numeric(UBER$TravelTime)
+UBER$TripDistance <- as.numeric(UBER$TripDistance)
+UBER$SurgeMultiplier <- as.numeric(UBER$SurgeMultiplier)
+UBER$BaseFare <- as.numeric(UBER$BaseFare)
+UBER$MinuteRate <- as.numeric(UBER$MinuteRate)
+UBER$RatePerKM <- as.numeric(UBER$RatePerKM)
+UBER$DriverID <- as.numeric(UBER$DriverID)
+UBER$DriverRating <- as.numeric(UBER$DriverRating)
+UBER$YearsWorked <- as.numeric(UBER$YearsWorked)
+UBER$MaxPassengers <- as.numeric(UBER$MaxPassengers)
+UBER$UberServices <- factor(UBER$UberServices, levels = c("UberX", "UberComfort", "UberXL", "UberPremier"), ordered = TRUE)
+UBER$SuburbDropOff <- as.factor(UBER$SuburbDropOff)
+UBER$CarOwnership <- as.factor(UBER$CarOwnership)
+UBER$CarType <- as.factor(UBER$CarType)
+UBER$MaxPassengers <- as.numeric(UBER$MaxPassengers)
+
+summary(UBER)
+
+
+```
+## Create/mutate at least one variable from the existing ones  
+
+Now that we have our merged data set, we will use the **mutate** function to create the **FARETOTAL** using the data we have created from the **BaseFare**, **TravelTime**, **MinuteRate**, **TripDistance**, **RatePerKM** and **SurgeMultiplier** columns.  
+
+As noted previously, Uber's fares consist of a base fare as well as rates for distance travelled and time taken. This is also affected by a surge pricing multiplier. This is reflected in the code below.  
+
+
+```{r, echo = TRUE}
+
+####FARE 
+
+UBER %<>% 
+  mutate(FARETOTAL = (BaseFare + (TravelTime * MinuteRate) + (TripDistance * RatePerKM) * SurgeMultiplier))
+
+
+```
+
+## Scanning Data Set for Missing Values  
+
+Using **sum(is.na())**, we can identify the number of missing values in out **UBER** data frame. From the code, we can identify 6 missing values.  
+
+**colnames()** prints gives us the column/ variable names where there are missing values.  
+
+Using the **which(is.na())** and subsetting the data frame by the variable name, provide us with the rows of missing values.  
+
+When we find the missing values, we can then use the **impute()** function to replace the values as follows:  
+* **RiderRating** we can impute using the mean as it is numeric data.
+*  **UberServices** we can impute using mode as it is categorical data.  
+* **DriverRating** we can impute using the mean.
+* **CarType** we impute using mode as it is categorical data. 
+* **MaxPassengers** as this is numeric data with discrete values, we can impute the missing value with the median.  
+
+Once we have replaced the missing values, we can use **sum(is.na(UBER))** to check to make sure all the missing values have been dealt with.  
+
+
+
+
+```{r, echo = TRUE}
+##### STEP 4 - SCAN DATA SET FOR MISSING VALUES ###
+
+sum(is.na(UBER)) # Shows us the number of NA values in data frame. In this case there are 6
+
+
+# Identifying variables containing NA values.
+
+col_names <- colnames(UBER)[colSums(is.na(UBER)) > 0]
+col_names
+# The code above showed which columns had missing values, now we can use which() function to find the corresponding rows.
+
+which(is.na(UBER$RiderRating))           # NA value found in Row 6, and 10
+which(is.na(UBER$UberServices))          #NA value found in Row 6, 10 and 61
+which(is.na(UBER$DriverRating))          # NA value found in row 51
+which(is.na(UBER$CarType))               # NA value found in row 98
+which(is.na(UBER$MaxPassengers))         # NA value found in row 16
+
+
+
+
+
+#RiderRating is missing as it is continuous numeric data it can be replaced by the mean
+UBER$RiderRating %<>% impute(UBER$RiderRating, fun = mean)
+
+
+#UberServices - As this variable is categorical, we can apply the mode to replace NA value
+UBER$UberServices %<>% impute(UBER$UberServices, fun = mode)
+
+# Driver Rating - we can replace with mean like with the RiderRating
+UBER$DriverRating %<>% impute(UBER$DriverRating, fun = mean)
+
+
+# Car Type
+UBER$CarType %<>% impute(UBER$CarType, fun = mode)
+
+#Max Passenger - replace with median
+UBER$MaxPassengers %<>% impute(UBER$MaxPassengers, fun = median)
+
+
+sum(is.na(UBER)) # Nil NA values
+
+```
+## Scan Numeric Variables for Outliers  
+
+### Univariate Outlier Detection  
+
+We use Tukey's box plot method in each of our numeric values to detect outliers. Using the code below gives us the following results:  
+
+*  **RiderRating** - we detect an outlier with a value of 2
+* **TravelTime** - we detect an outlier with a value of 50
+*  **TripDistance** - we detect an outlier with a value of 45
+* **BaseFare** - No out liers detected. Further analysis may be necessary.
+*  **DriverRating** - Outlier with value of 3 detected.
+* **YearsWorked** - outlier with value of 18 detected.
+* **MinuteRate** - no outliers detected, further analysis may be required.
+* **RatePerKM** - No outliers detected, further analysis may be required.
+* **MaxPassengers** - 22 outliers detected, further investigation required.
+* **SurgeMultiplier** - 11 outliers detected. However, if we look at the output, we can see these are not real outliers. They are only detected as outliers, because the amount of rides with surge pricing compared to rides without, is imbalanced. Hence, no need to impute or delete values in SurgeMultiplier.  
+
+From the code below code, we can calculate the Inter-Quantile Range (IQR) for RiderRating, TravelTime, TripDistance, DriverRating and YearsWorked variables.  
+
+The Cap function below allows us to capture outliers which lie 1.5 times above the upperfence and 1.5 times the lower fence :  
+
+cap <- function(x){
+  quantiles <- quantile( x, c(0.05, 0.25, 0.75, 0.95 ) , na.rm = TRUE)*
+  x[ x < quantiles[2] - 1.5 * IQR(x, na.rm = TRUE) ] <- quantiles[1]**
+  x[ x > quantiles[3] + 1.5 * IQR(x, na.rm = TRUE) ] <- quantiles[4]*
+  x}  
+  
+
+The following code is then used to impute the mean or median values:  
+
+*RiderRating_cap <- as.data.frame(sapply(UBER$RiderRating, FUN = cap))*
+*summary(UBER$RiderRating)*
+*summary(RiderRating_cap)*
+*#Impute with the Mean*
+*UBER$RiderRating[RiderRatingup_outliers] <- mean(UBER$RiderRating)*
+*UBER$RiderRating*  
+
+
+
+
+
+```{r, echo = TRUE}
+###### OUTLIERS
+#Univariate Outlier detection using box plots.
+
+########################Rider Rating#################################
+bp_RiderRating <- boxplot(UBER$RiderRating)
+RiderRating_outliers <- bp_RiderRating$out
+RiderRating_outliers
+# We find one outlier with a value of 2
+
+# We Calculate the quartiles using the quantiles() function:
+q1RiderRating <- quantile(UBER$RiderRating, probs = 0.25)
+q3RiderRating <- quantile(UBER$RiderRating, probs = 0.75)
+iqrRiderRating <- q3RiderRating - q1RiderRating
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+RiderRatinglower_fence <- q1RiderRating - (1.5 * iqrRiderRating) # Recall that the lower fence is Q1 minus the inter-quartile range
+RiderRatingupper_fence <- q3RiderRating + (1.5 * iqrRiderRating) # Recall that the upper fence is Q3 plus the inter-quartile range
+RiderRatingup_outliers <- which(UBER$RiderRating > RiderRatingupper_fence)
+RiderRatinglow_outliers <- which(UBER$RiderRating < RiderRatinglower_fence)
+length(RiderRatingup_outliers) 
+length(RiderRatinglow_outliers) 
+RiderRatinglow_outliers           
+RiderRatingup_outliers              
+UBER$RiderRating[RiderRatingup_outliers]
+
+
+
+##################Travel Time ################################
+bp_TravelTime <- boxplot(UBER$TravelTime)
+TravelTime_outliers <- bp_TravelTime$out
+TravelTime_outliers
+#we find one outlier with a value of 50
+
+# We Calculate the quartiles using the quantiles() function:
+q1TravelTime <- quantile(UBER$TravelTime, probs = 0.25)
+q3TravelTime <- quantile(UBER$TravelTime, probs = 0.75)
+iqrTravelTime <- q3TravelTime - q1TravelTime
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+TravelTimelower_fence <- q1TravelTime - (1.5 * iqrTravelTime) # Recall that the lower fence is Q1 minus the inter-quartile range
+TravelTimeupper_fence <- q3TravelTime + (1.5 * iqrTravelTime) # Recall that the upper fence is Q3 plus the inter-quartile range
+TravelTimeup_outliers <- which(UBER$TravelTime > TravelTimeupper_fence)
+TravelTimelow_outliers <- which(UBER$TravelTime < TravelTimelower_fence)
+length(TravelTime_outliers) 
+length(TravelTimelow_outliers) 
+TravelTimelow_outliers            
+TravelTimeup_outliers              
+UBER$TravelTime[TravelTimeup_outliers]
+
+
+
+
+############### Trip Distance #################
+bp_TripDistance <- boxplot(UBER$TripDistance)
+TripDistance_outliers <- bp_TripDistance$out
+TripDistance_outliers
+#We find one outlier with a value of 45
+
+# We Calculate the quartiles using the quantiles() function:
+q1TripDistance <- quantile(UBER$TripDistance, probs = 0.25)
+q3TripDistance <- quantile(UBER$TripDistance, probs = 0.75)
+iqrTripDistance <- q3TripDistance - q1TripDistance
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+TripDistancelower_fence <- q1TripDistance - (1.5 * iqrTripDistance) # Recall that the lower fence is Q1 minus the inter-quartile range
+TripDistanceupper_fence <- q3TripDistance + (1.5 * iqrTripDistance) # Recall that the upper fence is Q3 plus the inter-quartile range
+TripDistanceup_outliers <- which(UBER$TripDistance > TripDistanceupper_fence)
+TripDistancelow_outliers <- which(UBER$TripDistance < TripDistancelower_fence)
+length(TripDistance_outliers) # There are none
+length(TripDistancelow_outliers) # Theres one
+TripDistancelow_outliers            #gives us location
+TripDistanceup_outliers              #This gives the locations (observation numbers) of the outliers 
+UBER$TripDistance[TripDistanceup_outliers]
+
+
+
+
+################  #Base Fare   ##############
+bp_BaseFare <- boxplot(UBER$BaseFare)
+BaseFare_outliers <- bp_BaseFare$out
+BaseFare_outliers
+#no out liers detected
+
+# We Calculate the quartiles using the quantiles() function:
+q1BaseFare <- quantile(UBER$BaseFare, probs = 0.25)
+q3BaseFare <- quantile(UBER$BaseFare, probs = 0.75)
+iqrBaseFare <- q3BaseFare - q1BaseFare
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+BaseFarelower_fence <- q1BaseFare - (1.5 * iqrBaseFare) # Recall that the lower fence is Q1 minus the inter-quartile range
+BaseFareupper_fence <- q3BaseFare + (1.5 * iqrBaseFare) # Recall that the upper fence is Q3 plus the inter-quartile range
+BaseFareup_outliers <- which(UBER$BaseFare > BaseFareupper_fence)
+BaseFarelow_outliers <- which(UBER$BaseFare < BaseFarelower_fence)
+length(BaseFare_outliers) # There are none
+length(BaseFarelow_outliers) # Theres one
+BaseFarelow_outliers            #gives us location
+BaseFareup_outliers              #This gives the locations (observation numbers) of the outliers 
+UBER$BaseFare[BaseFareup_outliers]
+
+
+
+############## DriverRating
+bp_DriverRating <- boxplot(UBER$DriverRating)
+DriverRating_outliers <- bp_DriverRating$out
+DriverRating_outliers
+# we detect one outlier of 3
+
+# We Calculate the quartiles using the quantiles() function:
+q1DriverRating <- quantile(UBER$DriverRating, probs = 0.25)
+q3DriverRating <- quantile(UBER$DriverRating, probs = 0.75)
+iqrDriverRating <- q3DriverRating - q1DriverRating
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+DriverRatinglower_fence <- q1DriverRating - (1.5 * iqrDriverRating) # Recall that the lower fence is Q1 minus the inter-quartile range
+DriverRatingupper_fence <- q3DriverRating + (1.5 * iqrDriverRating) # Recall that the upper fence is Q3 plus the inter-quartile range
+DriverRatingup_outliers <- which(UBER$BaseFare > DriverRatingupper_fence)
+DriverRatinglow_outliers <- which(UBER$BaseFare < DriverRatinglower_fence)
+length(DriverRating_outliers) 
+length(DriverRatinglow_outliers) 
+DriverRatinglow_outliers            
+DriverRatingup_outliers             
+UBER$DriverRating[DriverRatingup_outliers]
+
+
+
+
+
+###########     Years Worked
+bp_YearsWorked <- boxplot(UBER$YearsWorked)
+YearsWorked_outliers <- bp_YearsWorked$out
+YearsWorked_outliers
+#We find one outlier of 18
+
+q1YearsWorked <- quantile(UBER$YearsWorked, probs = 0.25)
+q3YearsWorked <- quantile(UBER$YearsWorked, probs = 0.75)
+iqrYearsWorked <- q3YearsWorked - q1YearsWorked
+
+# Once we have the IQR, we can calculate the upper and lower fence: 
+# Use any of the above methods to determine Q3 and Q1, and then: 
+YearsWorkedlower_fence <- q1YearsWorked - (1.5 * iqrYearsWorked) # Recall that the lower fence is Q1 minus the inter-quartile range
+YearsWorkedupper_fence <- q3YearsWorked + (1.5 * iqrYearsWorked) # Recall that the upper fence is Q3 plus the inter-quartile range
+YearsWorkedup_outliers <- which(UBER$YearsWorked > YearsWorkedupper_fence)
+YearsWorkedlow_outliers <- which(UBER$YearsWorked < YearsWorkedlower_fence)
+length(YearsWorked_outliers) # There are none
+length(YearsWorkedlow_outliers) # Theres one
+YearsWorkedlow_outliers            #gives us location
+YearsWorkedup_outliers              #This gives the locations (observation numbers) of the outliers 
+UBER$YearsWorked[YearsWorkedup_outliers]
+
+
+
+
+
+#Minute Rate
+bp_MinuteRate <- boxplot(UBER$MinuteRate)
+MinuteRate_outliers <- bp_MinuteRate$out
+MinuteRate_outliers
+#We do not find any outliers present - more investigation may be needed
+
+
+#RatePerKM
+bp_RatePerKM <- boxplot(UBER$RatePerKM)
+RatePerKM_outliers <- bp_RatePerKM$out
+RatePerKM_outliers
+#We do not find any outliers present - more investigation may be needed
+
+
+#MaxPassengers
+bp_MaxPassengers <- boxplot(UBER$MaxPassengers)
+MaxPassengers_outliers <- bp_MaxPassengers$out
+MaxPassengers_outliers
+# we find 22 values detected as outliers. more investigation needed.
+
+
+
+
+###############   Surge Multiplier   #################
+bp_SurgeMultiplier <- boxplot(UBER$SurgeMultiplier)
+SurgeMultiplier_outliers <- bp_SurgeMultiplier$out
+SurgeMultiplier_outliers
+#We find 11 outliers - more investigation is needed
+
+
+
+
+
+
+
+#####################################################################################################
+###########               Impute outliers                ################
+
+
+# Function
+# This is a user-defined function, that will appear in our environment for our use
+# It will cap outliers. 
+
+cap <- function(x){
+  quantiles <- quantile( x, c(0.05, 0.25, 0.75, 0.95 ) , na.rm = TRUE)
+  x[ x < quantiles[2] - 1.5 * IQR(x, na.rm = TRUE) ] <- quantiles[1]
+  x[ x > quantiles[3] + 1.5 * IQR(x, na.rm = TRUE) ] <- quantiles[4]
+  x
+}
+
+
+
+
+################## Rider Rating
+RiderRating_cap <- as.data.frame(sapply(UBER$RiderRating, FUN = cap))
+
+summary(UBER$RiderRating)
+summary(RiderRating_cap)
+#Impute with the Mean
+UBER$RiderRating[RiderRatingup_outliers] <- mean(UBER$RiderRating)
+UBER$RiderRating
+
+
+################## Travel Time
+TravelTime_cap <- as.data.frame(sapply(UBER$TravelTime, FUN = cap))
+
+summary(UBER$TravelTime)
+summary(TravelTime_cap)
+# Impute with the Mean
+UBER$TravelTime[TravelTimeup_outliers] <- mean(UBER$TravelTime)
+
+
+################ Trip Distance
+TripDistance_cap <- as.data.frame(sapply(UBER$TripDistance, FUN = cap))
+
+summary(UBER$TripDistance)
+summary(TripDistance_cap)
+# Impute with the Mean
+UBER$TripDistance[TripDistanceup_outliers] <- mean(UBER$TripDistance)
+
+
+
+############### Base Fare
+BaseFare_cap <- as.data.frame(sapply(UBER$BaseFare, FUN = cap))
+
+summary(UBER$BaseFare)
+summary(BaseFare_cap)
+# Impute with the Median as mean would not match with discrete levels
+UBER$BaseFare[BaseFareup_outliers] <- median(UBER$BaseFare)
+
+
+
+############# Driver Rating 
+DriverRating_cap <- as.data.frame(sapply(UBER$DriverRating, FUN = cap))
+
+summary(UBER$DriverRating)
+summary(DriverRating_cap)
+# Impute with the Mean
+UBER$DriverRating[DriverRatingup_outliers] <- mean(UBER$DriverRating)
+
+
+
+############# Years Worked
+
+YearsWorked_cap <- as.data.frame(sapply(UBER$YearsWorked, FUN = cap))
+
+summary(UBER$YearsWorked)
+summary(YearsWorked_cap)
+# Impute with the Mean
+UBER$YearsWorked[YearsWorkedup_outliers] <- median(UBER$YearsWorked)
+
+
+
+
+# A boxplot is really just a list that gets plotted. 
+# It contains the statistics, which look suspiciously like our summary() output
+# It contains the number of observations in the dataset, n
+# It contains the confidence intervals around the mean
+# It contains the outliers, "out" 
+# It contains any grouping variables (useful in multi-variate boxplots) 
+
+# Therefore, if we wanted to extract the outliers from the boxplot, we could extract 
+# them as we would any other element of a list: 
+
+
+
+
+
+```
+###  Multvariate  
+
+In detecting Multivariate outliers, we attempt to calculate multivariate outliers, however, due to some of the variables showing 0 IQR, the function produces an error.  
+
+Some values, such as the basefare or rates used in calculating the total fare may be dependent on categorical data such as the type of service requested and can be detected using an alternative approach.  
+
+
+
+Using **groupby** function, if we group **BaseFare** by service type. In **BaseFare_stats** we can see the min value for UberX is $0.20, well below the normal base of $2.50.  
+
+UBER$BaseFare[UBER$UberServices == "UberX" & UBER$BaseFare != 2.50] <- 2.50  
+
+**MinuteRate** the same method works for MinuteRate, an outlier of $0.35 is detected for a requested UberX service, we can then replace this with the correct value using the groupby method.  
+
+**RatePerKM** Using the same approach an outlier with a value of 1 is detected as a min as part of the UberX service. We replace the outlier value with the correct value using group by approach.  
+
+**Max Passengers** Outlier of 7 passengers is detected for a 4-Door Hatch/ Sedan. We correct this outlier by replacing it with the correct value of 3.  
+
+
+
+
+
+
+
+
+```{r}
+################  Multivariate Outlier Detection ######################
+#Use of MVN to detect Multivariate Outliers among numeric variables
+
+
+## Below subset does not work as at least one column has IQR = 0
+#UBER_set1 <- UBER %>% select(MaxPassengers, RatePerKM)
+#head(UBER_set1)
+#results <- UBER_set1 %>%
+#  MVN::mvn(multivariateOutlierMethod = "quan", 
+#           showOutliers = TRUE)
+
+
+
+## Below subset does not work as at least one column has IQR = 0
+#UBER_set2 <- UBER %>% select(MinuteRate, TravelTime)
+#head(UBER_set2)
+#results <- UBER_set1 %>%
+#  MVN::mvn(multivariateOutlierMethod = "quan", 
+#           showOutliers = TRUE)
+
+
+
+## Below subset does not work as at least one column has IQR = 0
+#UBER_set3 <- UBER %>% select(BaseFare, TripDistance, RatePerKM)
+#head(UBER_set3)
+#results <- UBER_set1 %>%
+#  MVN::mvn(multivariateOutlierMethod = "quan", 
+#           showOutliers = TRUE)
+
+
+
+## Below subset does not work as at least one column has IQR = 0
+#UBER_set4 <- UBER %>% select(BaseFare, MaxPassengers)
+#head(UBER_set4)
+#results <- UBER_set1 %>%
+#  MVN::mvn(multivariateOutlierMethod = "quan", 
+#           showOutliers = TRUE)
+
+
+
+######    alternate method.
+
+
+#Driver Rating by Uber Services
+BaseFare_stats <- UBER %>%
+group_by(UberServices) %>%
+summarise(mean_BaseFare = mean(BaseFare, na.rm = TRUE),
+          median_BaseFare = median(BaseFare, na.rm = TRUE),
+          minimum_BaseFare = min(BaseFare, na.rm = TRUE),
+          max_BaseFare = max(BaseFare, na.rm = TRUE),
+          sd_BaseFare = sd(BaseFare, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+
+
+#Replace outliers for UberX service in BaseFare with correct Base amount.
+UBER$BaseFare[UBER$UberServices == "UberX" & UBER$BaseFare != 2.50] <- 2.50
+
+
+#MinuteRate by Uber Services
+MinuteRate_stats <- UBER %>%
+group_by(UberServices) %>%
+summarise(mean_MinuteRate = mean(MinuteRate, na.rm = TRUE),
+          median_MinuteRate = median(MinuteRate, na.rm = TRUE),
+          minimum_MinuteRate = min(MinuteRate, na.rm = TRUE),
+          max_MinuteRate = max(MinuteRate, na.rm = TRUE),
+          sd_MinuteRate = sd(MinuteRate, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+#Replace outliers for UberX service in MinuteRate with correct Base amount.
+UBER$MinuteRate[UBER$UberServices == "UberX" & UBER$MinuteRate != 0.4] <- 0.4
+
+
+#RatePerKM by Uber Services
+RatePerKM_stats <- UBER %>%
+group_by(UberServices) %>%
+summarise(mean_RatePerKM = mean(RatePerKM, na.rm = TRUE),
+          median_RatePerKM = median(RatePerKM, na.rm = TRUE),
+          minimum_RatePerKM = min(RatePerKM, na.rm = TRUE),
+          max_RatePerKM = max(RatePerKM, na.rm = TRUE),
+          sd_RatePerKM = sd(RatePerKM, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+#Replace outliers for UberX service in RatePerKM with correct Base amount.
+UBER$RatePerKM[UBER$UberServices == "UberX" & UBER$RatePerKM != 1.45] <- 1.45
+
+
+#Max Passengers by Car Type
+MaxPassengers_stats <- UBER %>%
+group_by(CarType) %>%
+summarise(mean_MaxPassengers = mean(MaxPassengers, na.rm = TRUE),
+          median_MaxPassengers = median(MaxPassengers, na.rm = TRUE),
+          minimum_MaxPassengers = min(MaxPassengers, na.rm = TRUE),
+          max_MaxPassengersM = max(MaxPassengers, na.rm = TRUE),
+          sd_MaxPassengers = sd(MaxPassengers, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+#Replace outliers for UberX service in RatePerKM with correct Base amount.
+UBER$MaxPassengers[UBER$CarType == "UberX" & UBER$MaxPassengers != 3] <- 3
+
+
+
+
+```
+## Apply a Data Transformation to a Variable  
+### Transformation of Trip Distance  
+
+The variable **TripDistance** is selected for further examination and gain a better understanding of its distribution.
+Looking at the Histogram, we can observe that the data distribution is skewed towards the right.  
+
+To reduce skewedness of the distribution, we apply a **log** tansformation. Observing the Histogram for the log10 distribution below, the transformed data looks skewed to the left.  
+
+Applying the **Square Root** transformation to the **TripDistance** data yields great results, we can observe a more symmetrical distribution in the Histogram for Squaroot transformation below.  
+
+### Fare Total  
+We have also chosen **FARETOTAL** for further examination. Examining the histogram for the column, below, we can observe it is skewed to the right.  
+
+Applying the **SquareRoot** transformation, we can observe a more symmetrical distribution from the histogram below.  
+
+With **TripDistance** and **FARETOTAL** transformed into a symmetrical distribution. Transformation of data can aide with analysis by transforming complex non-linear relationships into linear relationships, they can be easier to work with. They also enable statistical analysis techniques like parametric tests and linear regression, which require data to be normally distributed.
+
+
+
+
+```{r, echo = TRUE}
+### Transformation
+
+## Trip Distance
+
+
+#Histogram of Trip Distance
+hist(UBER$TripDistance, breaks = 10,
+      main = "Histogram of Trip Distance", 
+      xlab = "Trip Distance")
+
+
+
+# Log 10 Transformation
+log_Distance <- log10(UBER$TripDistance)
+
+# Histogram of Log10 Transformed Trip Distance 
+hist(log_Distance, breaks = 10,
+     main = "Histogram of base 10 Trip Distance", 
+     xlab = "Base 10 log of Trip Distance")
+
+
+
+# Sqare Root Transformation
+sqrt_Distance <- sqrt(UBER$TripDistance)
+
+# Histogram of SQRT Transformed Trip Distance 
+hist(sqrt_Distance, breaks = 10,
+     main = "Histogram of the Square Root of Trip Distance", 
+     xlab = "Square Root of Trip Distance")
+
+## Fare Total  
+#Histogram of Fare Total
+hist(UBER$FARETOTAL,
+      main = "Histogram of Fare Total", 
+      xlab = "Trip Fare")
+
+# Sqare Root Transformation
+sqrt_Fare <- sqrt(UBER$TripDistance)
+
+# Histogram of Square Root Transformed Trip Distance 
+hist(sqrt_Fare,
+     main = "Histogram of Sqaure Root Trip Distance", 
+     xlab = "Square Root of Trip Distance")
+
+
+```
+
+
+## Summarise Statistics  
+
+Below, we create a number of summary statistics using the **groupby()**, **summarise()** and **pipes** functions in the code below allows us to calculate the  Mean, Median, Minimum, Maximum and Standard Deviations.  
+
+From the code below we have Summary statistics for:  
+
+* Rider Rating by Uber Services
+* Driver Rating by Uber Services
+* Travel Time by Suburb Drop Off
+* Travel Distance by Suburb Drop Off
+* Fare Total By Suburb Drop Off
+
+
+```{r, echo = TRUE}
+#Summarise Statistics
+
+#Rider Rating by Uber Services
+RiderRating_stats <- UBER %>%
+group_by(UberServices) %>%
+summarise(mean_RiderRating = mean(RiderRating, na.rm = TRUE),
+          median_RiderRating = median(RiderRating, na.rm = TRUE),
+          minimum_RiderRating = min(RiderRating, na.rm = TRUE),
+          max_RiderRating = max(RiderRating, na.rm = TRUE),
+          sd_RiderRating = sd(RiderRating, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+#Driver Rating by Uber Services
+DriverRating_stats <- UBER %>%
+group_by(UberServices) %>%
+summarise(mean_DriverRating_stats = mean(DriverRating, na.rm = TRUE),
+          median_DriverRating_stats = median(DriverRating, na.rm = TRUE),
+          minimum_DriverRating_stats = min(DriverRating, na.rm = TRUE),
+          max_DriverRating_stats = max(DriverRating, na.rm = TRUE),
+          sd_DriverRating_stats = sd(DriverRating, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+# Travel Time by Suburb Drop Off
+TravelTime_stats <- UBER %>%
+group_by(SuburbDropOff) %>%
+summarise(mean_TravelTime = mean(TravelTime, na.rm = TRUE),
+          median_TravelTime = median(TravelTime, na.rm = TRUE),
+          minimum_TravelTime = min(TravelTime, na.rm = TRUE),
+          max_TravelTime = max(TravelTime, na.rm = TRUE),
+          sd_TravelTime = sd(TravelTime, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+# Travel Distance by Suburb Drop Off
+TripDistance_stats <- UBER %>%
+group_by(SuburbDropOff) %>%
+summarise(mean_TripDistance = mean(TripDistance, na.rm = TRUE),
+          median_TripDistance = median(TripDistance, na.rm = TRUE),
+          minimum_TripDistance = min(TripDistance, na.rm = TRUE),
+          max_TripDistance = max(TripDistance, na.rm = TRUE),
+          sd_TripDistance = sd(TripDistance, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+# Fare Total By Suburb Drop Off
+FARETOTAL_stats <- UBER %>%
+group_by(SuburbDropOff) %>%
+summarise(mean_FARETOTAL = mean(FARETOTAL, na.rm = TRUE),
+          median_FARETOTAL = median(FARETOTAL, na.rm = TRUE),
+          minimum_FARETOTAL = min(FARETOTAL, na.rm = TRUE),
+          max_FARETOTAL = max(FARETOTAL, na.rm = TRUE),
+          sd_FARETOTAL = sd(FARETOTAL, na.rm = TRUE),
+          n = n()) %>%
+  ungroup()
+
+
+
+
+```
+### Write Data Frames to xlsx file
+
+from http://www.sthda.com/english/wiki/writing-data-from-r-to-excel-files-xls-xlsx
+
+
+```{r, echo = TRUE}
+#(STHDA, 2022)
+write.xlsx(cust_df, file = "customerdata.xlsx", sheetName = "Sheet1", 
+  colNames = TRUE, rowNames = TRUE, append = FALSE)
+
+
+write.xlsx(Drive_df, file = "Driverdata.xlsx", sheetName = "Sheet1", 
+  colNames = TRUE, rowNames = TRUE, append = FALSE)
+
+write.xlsx(UBER, file = "UBERDATA.xlsx", sheetName = "Sheet1", 
+  colNames = TRUE, rowNames = TRUE, append = FALSE)
+
+
+
+```
+
+
+
+## References  
+
+
+Uber.com 2022, *UBER Uber One Member Benefits and Invite-Only Perks for Rides, Deliveries, Groceries and More.*, UBER, viewed 4 April 2022,
+<https://www.uber.com/us/en/u/uber-one/>  
+
+
+Uber.com 2022, *Always The Ride You Want*, UBER, viewed 4 April 2022,
+<https://www.uber.com/au/en/ride/>  
+
+
+Caracal, Stackexhange.com, 2011, *How To Generate Random Categorical Data?* Stackexchange.com, Viewed 3 April, 2022, 
+<https://stats.stackexchange.com/questions/14158/how-to-generate-random-categorical-data>  
+
+AEF, Stackoverflow.com, 2017, *Generate Random Times in Sample of POSIXct*, Stackoverflow.com, viewed 3 April 2022, 
+<https://stackoverflow.com/questions/45633452/generate-random-times-in-sample-of-posixct>  
+
+google.com 2022, *Google Maps*, google.com, viewed 4 April 2022, 
+<https://www.google.com/maps>  
+
+
+Uber.com 2022, *Making The Most of Your Time on the Road*, UBER, viewed 4 April 2022,
+<https://www.uber.com/en-AU/blog/making-the-most-of-your-time-on-the-road/>  
+
+
+Yip, S 2021, *Uber Sydney: Fare Estimates, Vehicle Types and Airport Pick-up Points, finder.com.au, viewed 4 April 2022,  
+<https://www.finder.com.au/uber-sydney-fares-services>  
+
+
+Paul, K 2019, *Uber to Ban Riders with Low Ratings: Will you Pass the Test*. The Guardian, viewed 5 April 2022, 
+<https://www.theguardian.com/technology/2019/may/31/uber-to-ban-riders-with-low-ratings#:~:text=Drivers%20on%20the%20platform%2C%20for,to%20stay%20on%20the%20app.>  
+
+
+Uber.com 2022, *Sydney Vehicle Requirements*, UBER, viewed 5 April 2022,
+<https://www.uber.com/au/en/drive/sydney/vehicle-requirements/>  
+
+
+STHDA.com 2022, *Writing Data From R to Excel Files (XLS|XLSX)*, STHDA.com, viewed 10/04/2022, 
+<http://www.sthda.com/english/wiki/writing-data-from-r-to-excel-files-xls-xlsx>
+
+
+
+Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with lubridate. Journal of Statistical
+  Software, 40(3), 1-25. URL https://www.jstatsoft.org/v40/i03/.  
+  
+Stefan Milton Bache and Hadley Wickham (2022). magrittr: A Forward-Pipe Operator for R. R package version
+  2.0.2. https://CRAN.R-project.org/package=magrittr  
+  
+Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2022). dplyr: A Grammar of Data
+  Manipulation. R package version 1.0.8. https://CRAN.R-project.org/package=dplyr  
+  
+  
+Hadley Wickham and Maximilian Girlich (2022). tidyr: Tidy Messy Data. R package version 1.2.0.
+  https://CRAN.R-project.org/package=tidyr  
+  
+
+Lukasz Komsta (2022). outliers: Tests for Outliers. R package version 0.15.
+  https://CRAN.R-project.org/package=outliers  
+  
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
+  https://doi.org/10.21105/joss.01686  
+  
+  
+Mark van der Loo, Edwin de Jonge and Sander Scholtus (2015). deducorrect: Deductive Correction, Deductive
+  Imputation, and Deterministic Correction. R package version 1.3.7.
+  https://CRAN.R-project.org/package=deducorrect  
+
+
+Mark van der Loo and Edwin de Jonge (2021). deductive: Data Correction and Imputation Using Deductive
+  Methods. R package version 1.0.0. https://CRAN.R-project.org/package=deductive  
+  
+Mark P. J. van der Loo, Edwin de Jonge (2021). Data Validation Infrastructure for R. Journal of Statistical
+  Software, 97(10), 1-31. doi:10.18637/jss.v097.i10  
+
+
+Frank E Harrell Jr (2021). Hmisc: Harrell Miscellaneous. R package version 4.6-0.
+  https://CRAN.R-project.org/package=Hmisc  
+  
+
+Korkmaz S, Goksuluk D, Zararsiz G. MVN: An R Package for Assessing Multivariate Normality. The R Journal.
+  2014 6(2):151-162.  
+
+Hadley Wickham, Jim Hester and Jennifer Bryan (2022). readr: Read Rectangular Text Data. R
+  package version 2.1.2. https://CRAN.R-project.org/package=readr  
+
+
+Philipp Schauberger and Alexander Walker (2021). openxlsx: Read, Write and Edit xlsx Files. R
+  package version 4.2.5. https://CRAN.R-project.org/package=openxlsx  
+
+
+Adrian Dragulescu and Cole Arendt (2020). xlsx: Read, Write, Format Excel 2007 and Excel
+  97/2000/XP/2003 Files. R package version 0.6.5. https://CRAN.R-project.org/package=xlsx  
+  
+  
+
+Yihui Xie (2022). tinytex: Helper Functions to Install and Maintain TeX Live, and Compile LaTeX Documents.
+  R package version 0.38.  
+
+Yihui Xie (2019) TinyTeX: A lightweight, cross-platform, and easy-to-maintain LaTeX distribution based on
+  TeX Live. TUGboat 40 (1): 30--32. https://tug.org/TUGboat/Contents/contents40-1.html
+ 
+
+
+
+
+
+### **IMPORTANT NOTE** 
+
+The report must be uploaded to Assignment 1 section in Canvas as a **PDF** document with R codes and outputs showing. The easiest way to do this is to:
+<br>
+1) Run all R chunks
+<br>
+2) **Preview** your notebook in **HTML** (by clicking Preview Notebook)
+<br>
+3) **Open in Browser (Chrome)**
+<br>
+4) **Right Click on the report in Chrome**
+<br>
+5)  **Click Print** and Select the Destination Option to **Save as PDF**. 
+<br>
+6) Now upload this PDF report as one single file via the Assignment 1 page in Canvas.
+<br>
+<br>
+**Remember to DELETE the instructional text provided in the template. Failure to do this will INCREASE the SIMILARITY INDEX reported in TURNITIN** 
+<br>
+
+If you have any questions regarding the assignment instructions or the R Markdown template, please post them on the discussion board. 
+
+<br>
+
+
+
